@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VibeSpace — Social Feed</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!--
+  ============================================================
+    SCSS ARCHITECTURE (compiled inline)
+    styles/
+      abstracts/ → variables, mixins, functions
+      base/       → reset, typography
+      components/ → post, button, navbar, sidebar, story
+      layout/     → grid, sidebar layout
+      pages/      → feed
+  ============================================================
+  -->
+  <style>
+    /* =====================================================
+       abstracts/_variables.scss
+       ===================================================== */
+    :root {
+      /* Color Palette */
+      --color-bg:           #0d0d12;
+      --color-surface:      #15151e;
+      --color-surface-2:    #1c1c28;
+      --color-border:       #2a2a3a;
+      --color-accent:       #7c6aff;
+      --color-accent-hover: #9b8dff;
+      --color-accent-2:     #ff6ab0;
+      --color-text-primary: #f0effa;
+      --color-text-secondary:#9795aa;
+      --color-text-muted:   #5c5a6e;
+      --color-like:         #ff5c8a;
+      --color-comment:      #5cc8ff;
+      --color-share:        #5cffc1;
+
+      /* Typography */
+      --font-display: 'Syne', sans-serif;
+      --font-body:    'DM Sans', sans-serif;
+
+      /* Spacing (mixin-like scale) */
+      --space-xs:  4px;
+      --space-sm:  8px;
+      --space-md:  16px;
+      --space-lg:  24px;
+      --space-xl:  32px;
+      --space-2xl: 48px;
+
+      /* Border Radius */
+      --radius-sm:   8px;
+      --radius-md:   12px;
+      --radius-lg:   18px;
+      --radius-full: 9999px;
+
+      /* Shadows */
+      --shadow-card: 0 4px 32px rgba(0,0,0,0.4);
+      --shadow-glow: 0 0 24px rgba(124,106,255,0.18);
+
+      /* Transitions */
+      --transition-fast: 0.15s ease;
+      --transition-base: 0.25s ease;
+    }
+
+    /* =====================================================
+       base/_reset.scss
+       ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    ul, ol { list-style: none; }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { border: none; background: none; cursor: pointer; font-family: inherit; }
+
+    /* =====================================================
+       base/_typography.scss
+       ===================================================== */
+    h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.2; }
+    .text--primary   { color: var(--color-text-primary); }
+    .text--secondary { color: var(--color-text-secondary); }
+    .text--muted     { color: var(--color-text-muted); }
+    .text--accent    { color: var(--color-accent); }
+
+    /* =====================================================
+       layout/_grid.scss
+       ===================================================== */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr 260px;
+      grid-template-areas: "sidebar-left feed sidebar-right";
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
+      gap: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .layout {
+        grid-template-columns: 72px 1fr;
+        grid-template-areas: "sidebar-left feed";
+      }
+      .layout__sidebar--right { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-areas: "feed";
+        padding-bottom: 72px;
+      }
+      .layout__sidebar--left { display: none; }
+      .mobile-nav { display: flex; }
+    }
+
+    .layout__sidebar--left  { grid-area: sidebar-left; position: sticky; top: 0; height: 100vh; }
+    .layout__feed           { grid-area: feed; border-left: 1px solid var(--color-border); border-right: 1px solid var(--color-border); }
+    .layout__sidebar--right { grid-area: sidebar-right; position: sticky; top: 0; height: 100vh; }
+
+    /* =====================================================
+       components/_navbar.scss
+       ===================================================== */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,13,18,0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    /* BEM: .navbar__logo */
+    .navbar__logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.4rem;
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
+    }
+
+    /* BEM: .navbar__search */
+    .navbar__search {
+      flex: 1;
+      max-width: 380px;
+      position: relative;
+    }
+
+    .navbar__search-input {
+      width: 100%;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      padding: 10px var(--space-md) 10px 40px;
+      color: var(--color-text-primary);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      outline: none;
+    }
+    .navbar__search-input::placeholder { color: var(--color-text-muted); }
+    .navbar__search-input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(124,106,255,0.12);
+    }
+
+    .navbar__search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-muted);
+      pointer-events: none;
+      font-size: 0.95rem;
+    }
+
+    /* BEM: .navbar__avatar */
+    .navbar__avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: white;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      flex-shrink: 0;
+    }
+    .navbar__avatar:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 0 3px rgba(124,106,255,0.3);
+    }
+
+    /* =====================================================
+       layout/_sidebar.scss + components/_sidebar.scss
+       ===================================================== */
+    .sidebar {
+      padding: var(--space-xl) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .sidebar--right {
+      padding: var(--space-xl) var(--space-md);
+    }
+
+    /* BEM: .sidebar__item */
+    .sidebar__item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 12px var(--space-md);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+      position: relative;
+    }
+
+    .sidebar__item:hover {
+      background: var(--color-surface-2);
+      color: var(--color-text-primary);
+      transform: translateX(3px);
+    }
+
+    /* BEM: .sidebar__item--active */
+    .sidebar__item--active {
+      background: rgba(124,106,255,0.12);
+      color: var(--color-accent);
+    }
+    .sidebar__item--active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 3px;
+      background: var(--color-accent);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .sidebar__icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar__label { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
+
+    @media (max-width: 1024px) {
+      .sidebar__label { display: none; }
+      .sidebar { align-items: center; padding: var(--space-lg) var(--space-sm); }
+    }
+
+    /* =====================================================
+       components/_story.scss  (Story / Highlights)
+       ===================================================== */
+    .stories {
+      display: flex;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .stories::-webkit-scrollbar { display: none; }
+
+    /* BEM: .story__item */
+    .story__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* BEM: .story__ring */
+    .story__ring {
+      padding: 2px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+      transition: transform var(--transition-fast);
+    }
+    .story__ring:hover { transform: scale(1.08); }
+
+    /* BEM: .story__ring--seen */
+    .story__ring--seen { background: var(--color-border); }
+
+    /* BEM: .story__avatar */
+    .story__avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: var(--radius-full);
+      border: 2.5px solid var(--color-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      background: var(--color-surface-2);
+      overflow: hidden;
+    }
+
+    /* BEM: .story__name */
+    .story__name {
+      font-size: 0.72rem;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      max-width: 64px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* =====================================================
+       components/_post.scss  (POST CARD — MOST IMPORTANT)
+       ===================================================== */
+    .post-card {
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-lg);
+      transition: background var(--transition-base);
+    }
+    .post-card:hover { background: var(--color-surface-2); }
+
+    /* BEM: .post-card__header */
+    .post-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-md);
+    }
+
+    /* BEM: .post-card__user */
+    .post-card__user {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* BEM: .post-card__avatar */
+    .post-card__avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      color: white;
+      flex-shrink: 0;
+    }
+
+    /* BEM: .post-card__username */
+    .post-card__username {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--color-text-primary);
+    }
+
+    /* BEM: .post-card__handle */
+    .post-card__handle {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    /* BEM: .post-card__time */
+    .post-card__time {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+    }
+
+    /* BEM: .post-card__more */
+    .post-card__more {
+      color: var(--color-text-muted);
+      padding: var(--space-xs);
+      border-radius: var(--radius-sm);
+      transition: background var(--transition-fast), color var(--transition-fast);
+      font-size: 1.1rem;
+    }
+    .post-card__more:hover {
+      background: var(--color-border);
+      color: var(--color-text-primary);
+    }
+
+    /* BEM: .post-card__content */
+    .post-card__content {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-md);
+    }
+    .post-card__content strong { color: var(--color-text-primary); font-weight: 500; }
+
+    /* BEM: .post-card__hashtag */
+    .post-card__hashtag {
+      color: var(--color-accent);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .post-card__hashtag:hover { text-decoration: underline; }
+
+    /* BEM: .post-card__image */
+    .post-card__image {
+      width: 100%;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: var(--space-md);
+      aspect-ratio: 16/9;
+      background: var(--color-surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      border: 1px solid var(--color-border);
+    }
+
+    /* BEM: .post-card__actions */
+    .post-card__actions {
+      display: flex;
+      gap: var(--space-xs);
+      border-top: 1px solid var(--color-border);
+      padding-top: var(--space-md);
+      margin-top: var(--space-sm);
+    }
+
+    /* BEM: .post-card__action-btn */
+    .post-card__action-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 8px var(--space-md);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+      font-family: var(--font-body);
+    }
+    .post-card__action-btn:hover { transform: scale(1.05); }
+
+    /* BEM modifiers */
+    .post-card__action-btn--like:hover    { background: rgba(255,92,138,0.12); color: var(--color-like); }
+    .post-card__action-btn--like.active   { color: var(--color-like); }
+    .post-card__action-btn--comment:hover { background: rgba(92,200,255,0.1);  color: var(--color-comment); }
+    .post-card__action-btn--share:hover   { background: rgba(92,255,193,0.1);  color: var(--color-share); }
+
+    .post-card__action-btn--like.active .post-card__action-icon { display: inline-block; animation: heartPop 0.3s ease; }
+
+    @keyframes heartPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+
+    /* BEM: .post-card__action-icon */
+    .post-card__action-icon { font-size: 1rem; }
+
+    /* =====================================================
+       components/_button.scss  (Reusable Button System)
+       ===================================================== */
+    /* Base button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      padding: 10px var(--space-lg);
+      border-radius: var(--radius-full);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+      border: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    /* BEM modifier: .btn--primary */
+    .btn--primary {
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .btn--primary:hover {
+      background: var(--color-accent-hover);
+      box-shadow: 0 4px 16px rgba(124,106,255,0.35);
+      transform: translateY(-1px);
+    }
+
+    /* BEM modifier: .btn--outline */
+    .btn--outline {
+      background: transparent;
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+    .btn--outline:hover {
+      background: rgba(124,106,255,0.1);
+      transform: translateY(-1px);
+    }
+
+    /* BEM modifier: .btn--icon */
+    .btn--icon {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: var(--radius-full);
+      background: var(--color-surface-2);
+      border-color: var(--color-border);
+      color: var(--color-text-secondary);
+      font-size: 1rem;
+    }
+    .btn--icon:hover {
+      background: var(--color-border);
+      color: var(--color-text-primary);
+    }
+
+    /* =====================================================
+       pages/_feed.scss
+       ===================================================== */
+    .feed {
+      min-height: 100vh;
+    }
+
+    .feed__header {
+      padding: var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .feed__title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .feed__compose {
+      padding: var(--space-lg);
+      display: flex;
+      gap: var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+      align-items: flex-start;
+    }
+
+    .feed__compose-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .feed__compose-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .feed__compose-input {
+      width: 100%;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+      color: var(--color-text-primary);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      resize: none;
+      outline: none;
+      min-height: 80px;
+      transition: border-color var(--transition-fast);
+    }
+    .feed__compose-input::placeholder { color: var(--color-text-muted); }
+    .feed__compose-input:focus { border-color: var(--color-accent); }
+
+    .feed__compose-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feed__compose-tools {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    /* =====================================================
+       Right Sidebar Widgets
+       ===================================================== */
+    .widget {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .widget__title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-md);
+    }
+
+    .widget__user {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .widget__avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      background: var(--color-surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .widget__name  { font-weight: 600; font-size: 0.875rem; }
+    .widget__sub   { font-size: 0.78rem; color: var(--color-text-muted); }
+
+    .trending__tag {
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--color-border);
+      cursor: pointer;
+    }
+    .trending__tag:last-child { border-bottom: none; }
+    .trending__tag:hover .trending__label { color: var(--color-accent); }
+
+    .trending__category { font-size: 0.72rem; color: var(--color-text-muted); }
+    .trending__label    { font-weight: 600; font-size: 0.875rem; margin: 2px 0; }
+    .trending__count    { font-size: 0.72rem; color: var(--color-text-muted); }
+
+    /* Mobile Bottom Nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(13,13,18,0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-md) var(--space-xl);
+      justify-content: space-around;
+      z-index: 200;
+    }
+
+    .mobile-nav__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: var(--color-text-muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      transition: color var(--transition-fast);
+    }
+    .mobile-nav__item--active { color: var(--color-accent); }
+    .mobile-nav__item span { font-size: 0.6rem; font-family: var(--font-display); font-weight: 600; }
+
+    /* Animations */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .post-card { animation: fadeSlideUp 0.4s ease both; }
+    .post-card:nth-child(1) { animation-delay: 0.05s; }
+    .post-card:nth-child(2) { animation-delay: 0.12s; }
+    .post-card:nth-child(3) { animation-delay: 0.19s; }
+    .post-card:nth-child(4) { animation-delay: 0.26s; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     React App Root
+     ============================================================ -->
+<div id="root"></div>
+
+<!-- React + Babel CDN -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ============================================================
+   DATA
+   ============================================================ */
+const POSTS = [
+  {
+    id: 1,
+    avatar: "🧑‍💻",
+    name: "Aryan Dev",
+    handle: "@aryan.dev",
+    time: "2m ago",
+    content: "Just shipped a new feature using React + SCSS architecture. BEM naming convention really makes the codebase so much cleaner! 🚀",
+    hashtags: ["#ReactJS", "#SCSS", "#FrontendDev"],
+    image: "🎨",
+    likes: 142,
+    comments: 28,
+    shares: 14,
+    liked: false,
+  },
+  {
+    id: 2,
+    avatar: "👩‍🎨",
+    name: "Sneha Malik",
+    handle: "@sneha.designs",
+    time: "15m ago",
+    content: "Hot take: CSS variables + SCSS mixins is the most underrated combo for scalable design systems. Change my mind.",
+    hashtags: ["#CSS", "#DesignSystems"],
+    image: null,
+    likes: 89,
+    comments: 41,
+    shares: 22,
+    liked: false,
+  },
+  {
+    id: 3,
+    avatar: "🧑‍🚀",
+    name: "Rahul Verma",
+    handle: "@rahulv",
+    time: "1h ago",
+    content: "Working on a social media UI project for college. Using proper SCSS folder structure this time — abstracts, base, components, layout. Feels so good! 💯",
+    hashtags: ["#WebDev", "#SCSS", "#Learning"],
+    image: "🖥️",
+    likes: 214,
+    comments: 55,
+    shares: 30,
+    liked: false,
+  },
+  {
+    id: 4,
+    avatar: "🦊",
+    name: "Priya Nair",
+    handle: "@priya.codes",
+    time: "3h ago",
+    content: "Reminder that reusable components aren't just about DRY code — they're about DRY thinking. Build the abstraction before the duplication.",
+    hashtags: ["#JavaScript", "#CleanCode"],
+    image: null,
+    likes: 376,
+    comments: 87,
+    shares: 61,
+    liked: true,
+  },
+];
+
+const STORIES = [
+  { id: 1, avatar: "🌸", name: "Meera", seen: false },
+  { id: 2, avatar: "🚀", name: "Karan", seen: false },
+  { id: 3, avatar: "🎯", name: "Ananya", seen: true },
+  { id: 4, avatar: "🌈", name: "Dev", seen: false },
+  { id: 5, avatar: "🦋", name: "Simran", seen: true },
+  { id: 6, avatar: "⚡", name: "Rohit", seen: false },
+];
+
+const TRENDING = [
+  { category: "Technology", tag: "#ReactJS", count: "48.2K posts" },
+  { category: "Design", tag: "#UIDesign", count: "32.1K posts" },
+  { category: "Dev", tag: "#OpenSource", count: "21.5K posts" },
+  { category: "Learning", tag: "#100DaysOfCode", count: "18.9K posts" },
+];
+
+const SUGGESTIONS = [
+  { avatar: "🎸", name: "Vikram Singh", sub: "UI/UX Designer" },
+  { avatar: "🌺", name: "Neha Gupta", sub: "Frontend Dev" },
+  { avatar: "🏄", name: "Aditya Roy", sub: "Full Stack" },
+];
+
+/* ============================================================
+   components/Button.jsx
+   ============================================================ */
+function Button({ variant = "primary", icon, children, onClick, className = "" }) {
+  const cls = `btn btn--${variant} ${className}`;
+  return (
+    <button className={cls} onClick={onClick}>
+      {icon && <span className="btn__icon">{icon}</span>}
+      {children}
+    </button>
+  );
+}
+
+/* ============================================================
+   components/Navbar.jsx
+   ============================================================ */
+function Navbar() {
+  return (
+    <nav className="navbar">
+      <div className="navbar__logo">VibeSpace</div>
+      <div className="navbar__search">
+        <span className="navbar__search-icon">🔍</span>
+        <input
+          type="text"
+          className="navbar__search-input"
+          placeholder="Search VibeSpace..."
+        />
+      </div>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <button className="btn btn--icon">🔔</button>
+        <button className="btn btn--icon">💬</button>
+        <div className="navbar__avatar">GY</div>
+      </div>
+    </nav>
+  );
+}
+
+/* ============================================================
+   layout/Sidebar.jsx (Left)
+   ============================================================ */
+function LeftSidebar({ active, setActive }) {
+  const items = [
+    { icon: "🏠", label: "Home",     id: "home" },
+    { icon: "🔭", label: "Explore",  id: "explore" },
+    { icon: "💬", label: "Messages", id: "messages" },
+    { icon: "🔔", label: "Alerts",   id: "alerts" },
+    { icon: "👤", label: "Profile",  id: "profile" },
+  ];
+
+  return (
+    <aside className="layout__sidebar--left">
+      <div className="sidebar">
+        {items.map(item => (
+          <div
+            key={item.id}
+            className={`sidebar__item ${active === item.id ? "sidebar__item--active" : ""}`}
+            onClick={() => setActive(item.id)}
+          >
+            <span className="sidebar__icon">{item.icon}</span>
+            <span className="sidebar__label">{item.label}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: "auto", paddingTop: "24px" }}>
+          <Button variant="primary" style={{ width: "100%" }}>+ Post</Button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ============================================================
+   layout/Sidebar.jsx (Right)
+   ============================================================ */
+function RightSidebar() {
+  return (
+    <aside className="layout__sidebar--right sidebar--right">
+      {/* Trending */}
+      <div className="widget">
+        <div className="widget__title">🔥 Trending</div>
+        {TRENDING.map(t => (
+          <div className="trending__tag" key={t.tag}>
+            <div className="trending__category">{t.category}</div>
+            <div className="trending__label">{t.tag}</div>
+            <div className="trending__count">{t.count}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Suggestions */}
+      <div className="widget">
+        <div className="widget__title">✨ Who to Follow</div>
+        {SUGGESTIONS.map(u => (
+          <div className="widget__user" key={u.name}>
+            <div className="widget__avatar">{u.avatar}</div>
+            <div style={{ flex: 1 }}>
+              <div className="widget__name">{u.name}</div>
+              <div className="widget__sub">{u.sub}</div>
+            </div>
+            <Button variant="outline" style={{ padding: "5px 14px", fontSize: "0.78rem" }}>Follow</Button>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+/* ============================================================
+   components/Story.jsx
+   ============================================================ */
+function StorySection() {
+  return (
+    <div className="stories">
+      {/* Add Story */}
+      <div className="story__item">
+        <div className="story__ring">
+          <div className="story__avatar" style={{ background: "var(--color-surface-2)", fontSize: "1.5rem" }}>➕</div>
+        </div>
+        <span className="story__name">Your Story</span>
+      </div>
+
+      {STORIES.map(s => (
+        <div className="story__item" key={s.id}>
+          <div className={`story__ring ${s.seen ? "story__ring--seen" : ""}`}>
+            <div className="story__avatar">{s.avatar}</div>
+          </div>
+          <span className="story__name">{s.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
+   components/PostCard.jsx  (MOST IMPORTANT)
+   ============================================================ */
+function PostCard({ post, onLike }) {
+  return (
+    <article className="post-card">
+      {/* post-card__header */}
+      <div className="post-card__header">
+        <div className="post-card__user">
+          <div className="post-card__avatar">{post.avatar}</div>
+          <div>
+            <div className="post-card__username">{post.name}</div>
+            <div className="post-card__handle">{post.handle} · <span className="post-card__time">{post.time}</span></div>
+          </div>
+        </div>
+        <button className="post-card__more">⋯</button>
+      </div>
+
+      {/* post-card__content */}
+      <p className="post-card__content">
+        {post.content}{" "}
+        {post.hashtags.map(h => (
+          <span className="post-card__hashtag" key={h}>{h} </span>
+        ))}
+      </p>
+
+      {/* post-card__image */}
+      {post.image && (
+        <div className="post-card__image">
+          <span style={{ fontSize: "4rem" }}>{post.image}</span>
+        </div>
+      )}
+
+      {/* post-card__actions */}
+      <div className="post-card__actions">
+        <button
+          className={`post-card__action-btn post-card__action-btn--like ${post.liked ? "active" : ""}`}
+          onClick={() => onLike(post.id)}
+        >
+          <span className="post-card__action-icon">{post.liked ? "❤️" : "🤍"}</span>
+          {post.likes}
+        </button>
+        <button className="post-card__action-btn post-card__action-btn--comment">
+          <span className="post-card__action-icon">💬</span>
+          {post.comments}
+        </button>
+        <button className="post-card__action-btn post-card__action-btn--share">
+          <span className="post-card__action-icon">🔁</span>
+          {post.shares}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/* ============================================================
+   pages/Feed.jsx
+   ============================================================ */
+function FeedPage() {
+  const [posts, setPosts] = useState(POSTS);
+  const [newPost, setNewPost] = useState("");
+
+  function handleLike(id) {
+    setPosts(prev => prev.map(p =>
+      p.id === id
+        ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
+        : p
+    ));
+  }
+
+  function handlePost() {
+    if (!newPost.trim()) return;
+    const created = {
+      id: Date.now(),
+      avatar: "😎",
+      name: "Gyanvi",
+      handle: "@gyanvi",
+      time: "just now",
+      content: newPost,
+      hashtags: [],
+      image: null,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      liked: false,
+    };
+    setPosts(prev => [created, ...prev]);
+    setNewPost("");
+  }
+
+  return (
+    <main className="layout__feed feed">
+      {/* Feed Header */}
+      <div className="feed__header">
+        <h1 className="feed__title">Home 🏠</h1>
+        <Button variant="outline">✨ For You</Button>
+      </div>
+
+      {/* Stories */}
+      <StorySection />
+
+      {/* Compose */}
+      <div className="feed__compose">
+        <div className="feed__compose-avatar">G</div>
+        <div className="feed__compose-box">
+          <textarea
+            className="feed__compose-input"
+            placeholder="What's on your mind, Gyanvi?"
+            value={newPost}
+            onChange={e => setNewPost(e.target.value)}
+          />
+          <div className="feed__compose-actions">
+            <div className="feed__compose-tools">
+              <button className="btn btn--icon">🖼️</button>
+              <button className="btn btn--icon">🎬</button>
+              <button className="btn btn--icon">😄</button>
+            </div>
+            <Button variant="primary" onClick={handlePost}>Post</Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Posts */}
+      {posts.map(post => (
+        <PostCard key={post.id} post={post} onLike={handleLike} />
+      ))}
+    </main>
+  );
+}
+
+/* ============================================================
+   App Root
+   ============================================================ */
+function App() {
+  const [active, setActive] = useState("home");
+
+  return (
+    <>
+      <Navbar />
+      <div className="layout">
+        <LeftSidebar active={active} setActive={setActive} />
+        <FeedPage />
+        <RightSidebar />
+      </div>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="mobile-nav">
+        {[
+          { icon: "🏠", label: "Home",    id: "home" },
+          { icon: "🔭", label: "Explore", id: "explore" },
+          { icon: "💬", label: "Chat",    id: "messages" },
+          { icon: "👤", label: "Profile", id: "profile" },
+        ].map(item => (
+          <div
+            key={item.id}
+            className={`mobile-nav__item ${active === item.id ? "mobile-nav__item--active" : ""}`}
+            onClick={() => setActive(item.id)}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
